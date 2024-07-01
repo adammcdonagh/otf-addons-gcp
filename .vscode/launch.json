@@ -1,0 +1,40 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Transfer - S3 to SSH Basic",
+      "type": "debugpy",
+      "request": "launch",
+      // "preLaunchTask": "Build Test containers",
+      "program": "../open-task-framework/src/opentaskpy/cli/task_run.py",
+      "console": "integratedTerminal",
+      "args": ["-t", "s3-to-s3", "-v", "3", "-c", "test/cfg"],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_DEFAULT_REGION": "eu-west-1",
+        "AWS_ENDPOINT_URL": "http://localhost:4566"
+      },
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Lambda Timeout",
+      "type": "debugpy",
+      "request": "launch",
+      // "preLaunchTask": "Build Test containers",
+      "program": "../open-task-framework/src/opentaskpy/cli/task_run.py",
+      "console": "integratedTerminal",
+      "args": ["-t", "batch_lambda_timeout", "-v", "3", "-c", "test/cfg"],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_DEFAULT_REGION": "eu-west-1",
+        "AWS_ENDPOINT_URL": "http://localhost:4566"
+      },
+      "justMyCode": false
+    }
+  ]
+}
