@@ -1,0 +1,21 @@
+{
+  "$id": "http://localhost/transfer/bucket_destination/protocol.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "enum": [
+        "opentaskpy.addons.gcp.remotehandlers.cloudbucket.Transfer"
+      ]
+    },
+    "bucket_credentials_json": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "name",
+    "bucket_credentials_json"
+  ],
+  "additionalProperties": false
+}

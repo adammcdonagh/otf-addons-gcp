@@ -1,0 +1,14 @@
+{
+  "$id": "http://localhost/transfer/bucket_destination/flags.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "fullPath": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "fullPath"
+  ],
+  "additionalProperties": false
+}
