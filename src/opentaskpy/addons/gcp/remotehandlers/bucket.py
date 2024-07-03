@@ -33,7 +33,7 @@ class BucketTransfer(RemoteTransferHandler):
         super().__init__(spec)
 
         self.credentials = get_access_token(self.spec["protocol"])
-        print("CREDS OK")
+
         if "cacheableVariables" in self.spec:
             self.handle_cacheable_variables()
 
@@ -84,9 +84,7 @@ class BucketTransfer(RemoteTransferHandler):
         Returns:
             int: 0 if successful, 1 if not.
         """
-
         result = 0
-        print("Pulling file")
         if file_list:
             files = list(file_list.keys())
         else:
@@ -108,9 +106,9 @@ class BucketTransfer(RemoteTransferHandler):
                 file_name = f"{self.spec['directory']}/{file_name}"
 
             self.logger.info(
-                f"Uploading file: {file} to GCP Bucket {self.spec['bucketName']} with path: {file_name}"
+                f"Uploading file: {file} to GCP Bucket {self.spec['name']} with path: {file_name}"
             )
-
+            print(self.credentials)
             with open(file, "rb") as file_data:
                 response = requests.post(
                     f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['name']}/o?uploadType=media&name={self.spec['name']}",
