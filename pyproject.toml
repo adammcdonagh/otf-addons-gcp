@@ -13,15 +13,17 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 keywords = ["automation", "task", "framework", "gcp", "cloudstorage", "otf"]
-dependencies = ["google-cloud-storage >= 2.17.0", "google-auth >= v2.3.0"]
+dependencies = [
+    "google-cloud-storage >= 2.17.0",
+    "google-auth >= v2.3.0",
+    "opentaskpy >= v24.23.0",
+]
 description = "Addons for opentaskpy, giving it the ability to push/pull via GCP Cloud Storage."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
-    "awscli",
-    "awscli-local",
     "localstack",
     "localstack-client",
     "pytest-shell",
