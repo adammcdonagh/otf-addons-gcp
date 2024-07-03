@@ -180,3 +180,4 @@ test/testFiles
 test/volume
 tests/volume
 tests/testFiles
+src/ *.txt

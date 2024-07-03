@@ -1,1 +1,1 @@
-Hi test file in GCP.
+Hi test file COPY in GCP.

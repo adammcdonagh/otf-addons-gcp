@@ -2,11 +2,9 @@
 
 import glob
 import re
-from datetime import datetime
 
 import opentaskpy.otflogging
 import requests
-from dateutil.tz import tzlocal
 from opentaskpy.config.variablecaching import cache_utils
 from opentaskpy.exceptions import RemoteTransferError
 from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
@@ -29,23 +27,10 @@ class BucketTransfer(RemoteTransferHandler):
         self.logger = opentaskpy.otflogging.init_logging(
             __name__, spec["task_id"], self.TASK_TYPE
         )
-
         super().__init__(spec)
 
+        # Generating Access Token for Transfer
         self.credentials = get_access_token(self.spec["protocol"])
-
-        if "cacheableVariables" in self.spec:
-            self.handle_cacheable_variables()
-
-    def handle_cacheable_variables(self) -> None:
-        """Handle the cacheable variables."""
-        # Obtain the "updated" value from the spec
-        for cacheable_variable in self.spec["cacheableVariables"]:
-            updated_value = self.obtain_variable_from_spec(
-                cacheable_variable["variableName"], self.spec
-            )
-
-            cache_utils.update_cache(cacheable_variable, updated_value)
 
     def supports_direct_transfer(self) -> bool:
         """Return False, as all files should go via the worker."""
@@ -108,27 +93,30 @@ class BucketTransfer(RemoteTransferHandler):
             self.logger.info(
                 f"Uploading file: {file} to GCP Bucket {self.spec['name']} with path: {file_name}"
             )
-            print(self.credentials)
             with open(file, "rb") as file_data:
                 response = requests.post(
-                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['name']}/o?uploadType=media&name={self.spec['name']}",
-                    headers={
-                        "Authorization": f"Bearer {self.credentials}",
-                        "Content-Type": "application/octet-stream",
-                    },
+                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['name']}/o?uploadType=media&name={file_name}",
+                    headers={"Authorization": f"Bearer {self.credentials}"},
                     data=file_data,
-                    timeout=60,
+                    timeout=120,
                 )
-
-                # Check the response was a success
-                if not response.ok:
-                    self.logger.error(f"Failed to upload file: {file}")
+                if response.status_code == 401:
+                    self.logger.error(f"Unauthorised to Push file: {file}")
+                    result = 1
+                elif response.status_code == 403:
+                    self.logger.error(f"Failed to Push file: {file}")
+                    self.logger.error(
+                        f"File already exists or no Delete permissions (for upsert) on Bucket. Status Code: {response.status_code}"
+                    )
+                    result = 1
+                elif not response.ok:
+                    self.logger.error(f"Failed to Push file: {file}")
                     self.logger.error(f"Got return code: {response.status_code}")
                     self.logger.error(response.json())
                     result = 1
                 else:
                     self.logger.info(
-                        f"Successfully uploaded file to GCP bucket {self.spec['bucketName']}"
+                        f"Successfully uploaded {file_name} to GCP bucket {self.spec['name']}"
                     )
 
         return result
