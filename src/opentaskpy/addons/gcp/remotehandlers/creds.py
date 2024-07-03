@@ -17,16 +17,14 @@ def get_access_token(credentials: dict) -> credentials:
     authCreds = None  # Initialising authCreds
 
     # logger = opentaskpy.otflogging.init_logging(__name__, None, None)
-
-    print("Generating Access token from Service account creds")
-
+    print(credentials)
     authCreds = service_account.Credentials.from_service_account_info(
-        credentials["credentialsJson"],
+        credentials["credentials"],
         scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
     authCreds.refresh(Request())  # Refreshing access token
 
     if not authCreds.token:  # Handle exception
         raise RemoteTransferError("Could not acquire token from GCP")
-    print(authCreds.token)
+
     return authCreds.token  # Return the credentials (token,expiry).

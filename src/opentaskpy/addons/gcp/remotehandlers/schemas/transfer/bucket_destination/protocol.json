@@ -7,10 +7,19 @@
       "type": "string",
       "enum": ["opentaskpy.addons.gcp.remotehandlers.cloudbucket.Transfer"]
     },
-    "credentialsJson": {
-      "type": "object"
-    }
-  },
-  "required": ["name"],
-  "additionalProperties": false
+    "credentials": {
+      "type": "object",
+      "properties": {
+        "private_key": {
+          "type": "string"
+        },
+        "token_uri": {
+          "type": "string"
+        }
+      },
+      "required": ["private_key", "token_uri"]
+    },
+    "required": ["name", "credentials"],
+    "additionalProperties": false
+  }
 }

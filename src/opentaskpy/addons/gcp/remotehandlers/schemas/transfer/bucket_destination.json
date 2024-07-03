@@ -10,15 +10,12 @@
       "type": "string",
       "default": ""
     },
-    "flags": {
-      "$ref": "bucket_destination/flags.json"
-    },
     "encryption": {
       "$ref": "http://localhost/transfer/encryption.json"
     },
     "transferType": {
       "type": "string",
-      "enum": ["proxy", "push"]
+      "enum": ["proxy"]
     },
     "protocol": {
       "$ref": "bucket_destination/protocol.json"
