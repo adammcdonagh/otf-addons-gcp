@@ -46,8 +46,8 @@ def test_local_to_gcp_transfer(gcp_creds):
     task_definition = {
         "type": "transfer",
         "source": {
-            "directory": "/tests/testFiles",
-            "fileRegex": "hello.txt",
+            "directory": "src",
+            "fileRegex": ".*\\.txt",
             "protocol": {"name": "local"},
         },
         "destination": [deepcopy(bucket_destination_definition)],
