@@ -1,9 +1,12 @@
 """GCP helper functions."""
 
-import opentaskpy.otflogging
-from opentaskpy.exceptions import RemoteTransferError
-from google.oauth2 import service_account
+##import opentaskpy.otflogging
+from time import time
+
+import requests
 from google.auth.transport.requests import Request
+from google.oauth2 import service_account
+from opentaskpy.exceptions import RemoteTransferError
 
 
 def get_access_token(credentials: dict) -> dict:
@@ -13,20 +16,19 @@ def get_access_token(credentials: dict) -> dict:
         credentials: The credentials to use
     """
     # Get an Access Token
+    authCreds = None  # Initialising authCreds
 
-    logger = opentaskpy.otflogging.init_logging(__name__, None, None)
+    # logger = opentaskpy.otflogging.init_logging(__name__, None, None)
 
-    credentials = service_account.Credentials.from_service_account_info(
-        credentials, scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    print("Generating Access token from Service account creds")
+
+    authCreds = service_account.Credentials.from_service_account_info(
+        credentials["credentialsJson"],
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
-    credentials.refresh(Request())
+    authCreds.refresh(Request())  # Refreshing access token
 
-    print(credentials)
+    if not authCreds.token:  # Handle exception
+        raise RemoteTransferError(f"Could not acquire token from GCP")
 
-    if not credentials.token:
-        raise RemoteTransferError(
-            f"Could not acquire token from GCP"
-        )
-
-    return credentials.token            #Return the token.
-
+    return credentials  # Return the credentials (token,expiry).

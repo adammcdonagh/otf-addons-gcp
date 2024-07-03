@@ -1,4 +1,4 @@
-"""O365 Sharepoint remote handler."""
+"""GCP Cloud Bucket remote handler."""
 
 import glob
 import re
@@ -14,7 +14,7 @@ from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
 from .creds import get_access_token
 
 
-class Transfer(RemoteTransferHandler):
+class BucketTransfer(RemoteTransferHandler):
     """GCP CloudBucket remote transfer handler."""
 
     TASK_TYPE = "T"
@@ -32,8 +32,20 @@ class Transfer(RemoteTransferHandler):
 
         super().__init__(spec)
 
-        self.accessToken = get_access_token(self.spec["protocol"])
+        self.credentials = get_access_token(self.spec["protocol"])
+        print("CREDS OK")
+        if "cacheableVariables" in self.spec:
+            self.handle_cacheable_variables()
 
+    def handle_cacheable_variables(self) -> None:
+        """Handle the cacheable variables."""
+        # Obtain the "updated" value from the spec
+        for cacheable_variable in self.spec["cacheableVariables"]:
+            updated_value = self.obtain_variable_from_spec(
+                cacheable_variable["variableName"], self.spec
+            )
+
+            cache_utils.update_cache(cacheable_variable, updated_value)
 
     def supports_direct_transfer(self) -> bool:
         """Return False, as all files should go via the worker."""
@@ -74,7 +86,7 @@ class Transfer(RemoteTransferHandler):
         """
 
         result = 0
-
+        print("Pulling file")
         if file_list:
             files = list(file_list.keys())
         else:
@@ -101,17 +113,17 @@ class Transfer(RemoteTransferHandler):
 
             with open(file, "rb") as file_data:
                 response = requests.post(
-                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['bucket_name']}/o?uploadType=media&name={self.spec['destination_blob_name']}",
+                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['name']}/o?uploadType=media&name={self.spec['name']}",
                     headers={
-                        "Authorization": f"Bearer {self.accessToken}",
+                        "Authorization": f"Bearer {self.credentials}",
                         "Content-Type": "application/octet-stream",
                     },
                     data=file_data,
-                    timeout=60
+                    timeout=60,
                 )
 
                 # Check the response was a success
-                if response.status_code not in (200):
+                if not response.ok:
                     self.logger.error(f"Failed to upload file: {file}")
                     self.logger.error(f"Got return code: {response.status_code}")
                     self.logger.error(response.json())
@@ -152,6 +164,11 @@ class Transfer(RemoteTransferHandler):
     def create_flag_files(self) -> int:
         """Not implemented for this transfer type."""
         raise NotImplementedError
+
+    def list_files(
+        self, directory: str | None = None, file_pattern: str | None = None
+    ) -> dict:
+        return {}
 
     def tidy(self) -> None:
         """Nothing to tidy."""

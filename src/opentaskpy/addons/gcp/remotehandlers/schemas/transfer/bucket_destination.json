@@ -3,7 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "bucket": {
+    "name": {
       "type": "string"
     },
     "directory": {
@@ -18,10 +18,7 @@
     },
     "transferType": {
       "type": "string",
-      "enum": [
-        "proxy",
-        "push"
-      ]
+      "enum": ["proxy", "push"]
     },
     "protocol": {
       "$ref": "bucket_destination/protocol.json"
@@ -31,8 +28,5 @@
     }
   },
   "additionalProperties": false,
-  "required": [
-    "bucket",
-    "protocol"
-  ]
+  "required": ["name", "protocol"]
 }
