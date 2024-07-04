@@ -1,5 +1,5 @@
 {
-  "$id": "http://localhost/transfer/bucket_destination.json",
+  "$id": "http://localhost/transfer/bucket_source.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
@@ -7,6 +7,10 @@
       "type": "string"
     },
     "directory": {
+      "type": "string",
+      "default": ""
+    },
+    "fileRegex": {
       "type": "string",
       "default": ""
     },
@@ -18,12 +22,12 @@
       "enum": ["proxy"]
     },
     "protocol": {
-      "$ref": "bucket_destination/protocol.json"
+      "$ref": "bucket_source/protocol.json"
     },
     "rename": {
-      "$ref": "bucket_destination/rename.json"
+      "$ref": "bucket_source/rename.json"
     }
   },
   "additionalProperties": false,
-  "required": ["bucket", "protocol"]
+  "required": ["bucket", "protocol", "fileRegex"]
 }
