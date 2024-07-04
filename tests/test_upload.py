@@ -14,13 +14,12 @@ os.environ["OTF_LOG_LEVEL"] = "DEBUG"
 
 
 bucket_destination_definition = {
-    "name": "bucket-test-gcpupload",
-    "directory": "srcDEST1",
+    "bucket": "bucket-test-gcpupload",
+    "directory": "",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
-        "bucket_credentials_json": {},
+        "credentials": {},
     },
-    "rename": {"pattern": "hell", "sub": "i"},
 }
 
 
@@ -45,14 +44,14 @@ def test_local_to_gcp_transfer(gcp_creds):
     task_definition = {
         "type": "transfer",
         "source": {
-            "directory": "src",
-            "fileRegex": ".*\\.txt",
+            "directory": "src/tmp",
+            "fileRegex": ".*\\.csv",
             "protocol": {"name": "local"},
         },
         "destination": [deepcopy(bucket_destination_definition)],
     }
     task_definition["destination"][0]["protocol"]["credentials"] = gcp_creds
 
-    transfer_obj = transfer.Transfer(None, "local-to-gcp-bucket-copy", task_definition)
+    transfer_obj = transfer.Transfer(None, "local-to-gcp-bucket", task_definition)
 
     assert transfer_obj.run()

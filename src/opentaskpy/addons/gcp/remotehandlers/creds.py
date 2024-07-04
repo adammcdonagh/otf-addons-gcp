@@ -1,7 +1,6 @@
 """GCP helper functions."""
 
-##import opentaskpy.otflogging
-
+import opentaskpy.otflogging
 from google.auth.transport.requests import Request
 from google.oauth2 import credentials, service_account
 from opentaskpy.exceptions import RemoteTransferError
@@ -13,18 +12,24 @@ def get_access_token(credentials: dict) -> credentials:
     Args:
         credentials: The credentials to use
     """
-    # Get an Access Token
-    authCreds = None  # Initialising authCreds
+    logger = opentaskpy.otflogging.init_logging(__name__, None, None)
+    try:
+        # Get an Access Token
+        authCreds = None  # Initialising authCreds
 
-    # logger = opentaskpy.otflogging.init_logging(__name__, None, None)
-    print(credentials)
-    authCreds = service_account.Credentials.from_service_account_info(
-        credentials["credentials"],
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
-    )
-    authCreds.refresh(Request())  # Refreshing access token
+        logger.info("Retrieving credentials")
+        authCreds = service_account.Credentials.from_service_account_info(
+            credentials["credentials"],
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        authCreds.refresh(Request())  # Refreshing access token
 
-    if not authCreds.token:  # Handle exception
-        raise RemoteTransferError("Could not acquire token from GCP")
+        if not authCreds.token:  # Handle exception
+            logger.error("Error Retrieving credentials.")
+            raise RemoteTransferError("Could not acquire token from GCP")
+        logger.info("Successfully generated access token")
+        return authCreds.token  # Return the credentials (token).
 
-    return authCreds.token  # Return the credentials (token,expiry).
+    except Exception as e:
+        logger.error("Error generating access token")
+        logger.exception(e)

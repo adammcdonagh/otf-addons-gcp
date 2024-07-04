@@ -87,18 +87,18 @@ class BucketTransfer(RemoteTransferHandler):
                 self.logger.info(f"Renaming file to {file_name}")
 
             # Append a directory if one is defined
-            if "directory" in self.spec:
+            if "directory" in self.spec and self.spec["directory"] != "":
                 file_name = f"{self.spec['directory']}/{file_name}"
 
             self.logger.info(
-                f"Uploading file: {file} to GCP Bucket {self.spec['name']} with path: {file_name}"
+                f"Uploading file: {file} to GCP Bucket {self.spec['bucket']} with path: {file_name}"
             )
             with open(file, "rb") as file_data:
                 response = requests.post(
-                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['name']}/o?uploadType=media&name={file_name}",
+                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['bucket']}/o?uploadType=media&name={file_name}",
                     headers={"Authorization": f"Bearer {self.credentials}"},
                     data=file_data,
-                    timeout=120,
+                    timeout=1800,
                 )
                 if response.status_code == 401:
                     self.logger.error(f"Unauthorised to Push file: {file}")
@@ -116,7 +116,7 @@ class BucketTransfer(RemoteTransferHandler):
                     result = 1
                 else:
                     self.logger.info(
-                        f"Successfully uploaded {file_name} to GCP bucket {self.spec['name']}"
+                        f"Successfully uploaded {file_name} to GCP bucket {self.spec['bucket']}"
                     )
 
         return result
@@ -136,7 +136,46 @@ class BucketTransfer(RemoteTransferHandler):
         Returns:
             int: 0 if successful, 1 if not.
         """
-        raise NotImplementedError
+        result = 0
+        self.logger.info("Downloading file from GCP.")
+        try:
+            for file in files:
+                self.logger.info(file)
+                file = file.replace(
+                    "/", "%2F"
+                )  # Escaping front slashes from eventual directory
+
+                response = requests.get(
+                    f"https://storage.googleapis.com/download/storage/v1/b/{self.spec['bucket']}/o/{file}?alt=media",
+                    headers={"Authorization": f"Bearer {self.credentials}"},
+                    timeout=1800,
+                )
+                if response.status_code == 401:
+                    self.logger.error(f"Unauthorized to GET file: {file}")
+                    result = 1
+                elif response.status_code == 403:
+                    self.logger.error(f"Failed to GET file: {file}")
+                    self.logger.error(f"Forbidden Status Code: {response.status_code}")
+                    result = 1
+                elif not response.ok:
+                    self.logger.error(f"Failed to GET file: {file}")
+                    self.logger.error(f"Got return code: {response.status_code}")
+                    self.logger.error(response)
+                    result = 1
+                else:
+                    with open(
+                        f"{local_staging_directory}/{file.split('%2F')[-1]}", "wb"
+                    ) as f:
+                        f.write(response.content)
+                    self.logger.info(
+                        f"Successfully downloaded {file} to local Staging directory"
+                    )
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.error(f"Failed to download file: {file}")
+            self.logger.exception(e)
+            result = 1
+
+        return result
 
     def transfer_files(
         self,
@@ -153,8 +192,39 @@ class BucketTransfer(RemoteTransferHandler):
 
     def list_files(
         self, directory: str | None = None, file_pattern: str | None = None
-    ) -> dict:
-        return {}
+    ) -> list:
+        try:
+            file_pattern = self.spec["fileRegex"]
+            if "directory" in self.spec and self.spec["directory"] != "":
+                file_pattern = f"{self.spec['directory']}/{file_pattern}"
+
+            response = requests.get(
+                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o?matchGlob={file_pattern}",
+                headers={"Authorization": f"Bearer {self.credentials}"},
+                timeout=1800,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if "items" in data:
+                    items = data["items"]
+                    names = [item["name"] for item in items if "name" in item]
+                    return names
+                else:
+                    self.logger.info(
+                        f"No items which matches {file_pattern} found in directory."
+                    )
+                    return []
+            else:
+                self.logger.error(
+                    f"Error Listing files in Cloud Bucket. Status Code: {response.status_code}"
+                )
+
+        except Exception as e:
+            self.logger.error(
+                f"Error listing files in directory {self.spec['bucket']}/{self.spec['directory']}/{self.spec['fileRegex']}"
+            )
+            self.logger.exception(e)
+        return []
 
     def tidy(self) -> None:
         """Nothing to tidy."""
