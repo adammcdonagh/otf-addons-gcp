@@ -15,7 +15,7 @@ os.environ["OTF_LOG_LEVEL"] = "DEBUG"
 bucket_source_root_definition = {
     "bucket": "bucket-test-gcpupload",
     "directory": "",
-    "fileRegex": "bucket-test-gcpupload.txt",
+    "fileExpression": "LOCAL123123_123_23.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
@@ -23,8 +23,8 @@ bucket_source_root_definition = {
 }
 bucket_source_nested_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "srcDEST1",
-    "fileRegex": "io copy.txt",
+    "directory": "localnested",
+    "fileExpression": "**.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
@@ -32,15 +32,15 @@ bucket_source_nested_definition = {
 }
 bucket_source_nested_regex_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "srcDEST1",
-    "fileRegex": "**.txt",
+    "directory": "localnested",
+    "fileExpression": "root1dir.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
     },
 }
 bucket_local_definition = {
-    "directory": "src/tmp",
+    "directory": "src/tmp/downloaded",
     "protocol": {"name": "local"},
 }
 

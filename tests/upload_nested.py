@@ -12,10 +12,9 @@ from opentaskpy.taskhandlers import transfer
 # Set the log level to maximum
 os.environ["OTF_LOG_LEVEL"] = "DEBUG"
 
-
-bucket_destination_definition = {
+bucket_nested_destination_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "",
+    "directory": "localnested",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
@@ -39,19 +38,20 @@ def gcp_creds():
     return json.loads(keyR)
 
 
-def test_local_to_gcp_transfer(gcp_creds):
-
+def test_local_nested_to_gcp_transfer(gcp_creds):
     task_definition = {
         "type": "transfer",
         "source": {
-            "directory": "src/tmp",
-            "fileRegex": ".*\\.csv",
+            "directory": "src/tmp/nested",
+            "fileRegex": ".*\\.txt",
             "protocol": {"name": "local"},
         },
-        "destination": [deepcopy(bucket_destination_definition)],
+        "destination": [deepcopy(bucket_nested_destination_definition)],
     }
     task_definition["destination"][0]["protocol"]["credentials"] = gcp_creds
 
-    transfer_obj = transfer.Transfer(None, "local-to-gcp-bucket", task_definition)
+    transfer_obj = transfer.Transfer(
+        None, "local-nested-to-gcp-bucket", task_definition
+    )
 
     assert transfer_obj.run()
