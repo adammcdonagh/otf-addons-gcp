@@ -23,9 +23,6 @@
     },
     "protocol": {
       "$ref": "bucket_source/protocol.json"
-    },
-    "rename": {
-      "$ref": "bucket_source/rename.json"
     }
   },
   "additionalProperties": false,

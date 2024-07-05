@@ -5,7 +5,6 @@ import re
 
 import opentaskpy.otflogging
 import requests
-from opentaskpy.config.variablecaching import cache_utils
 from opentaskpy.exceptions import RemoteTransferError
 from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
 
@@ -69,57 +68,65 @@ class BucketTransfer(RemoteTransferHandler):
         Returns:
             int: 0 if successful, 1 if not.
         """
-        result = 0
-        if file_list:
-            files = list(file_list.keys())
-        else:
-            files = glob.glob(f"{local_staging_directory}/*")
+        try:
+            if file_list:
+                files = list(file_list.keys())
+            else:
+                files = glob.glob(f"{local_staging_directory}/*")
 
-        for file in files:
-            # Strip the directory from the file
-            file_name = file.split("/")[-1]
-            # Handle any rename that might be specified in the spec
-            if "rename" in self.spec:
-                rename_regex = self.spec["rename"]["pattern"]
-                rename_sub = self.spec["rename"]["sub"]
+            self.logger.info("File lists:")
+            self.logger.info(f"{files}")
 
-                file_name = re.sub(rename_regex, rename_sub, file_name)
-                self.logger.info(f"Renaming file to {file_name}")
+            for file in files:
+                result = 0
+                # Strip the directory from the file
+                file_name = file.split("/")[-1]
+                # Handle any rename that might be specified in the spec
+                if "rename" in self.spec:
+                    rename_regex = self.spec["rename"]["pattern"]
+                    rename_sub = self.spec["rename"]["sub"]
 
-            # Append a directory if one is defined
-            if "directory" in self.spec and self.spec["directory"] != "":
-                file_name = f"{self.spec['directory']}/{file_name}"
+                    file_name = re.sub(rename_regex, rename_sub, file_name)
+                    self.logger.info(f"Renaming file to {file_name}")
 
-            self.logger.info(
-                f"Uploading file: {file} to GCP Bucket {self.spec['bucket']} with path: {file_name}"
-            )
-            with open(file, "rb") as file_data:
-                response = requests.post(
-                    f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['bucket']}/o?uploadType=media&name={file_name}",
-                    headers={"Authorization": f"Bearer {self.credentials}"},
-                    data=file_data,
-                    timeout=1800,
+                # Append a directory if one is defined
+                if "directory" in self.spec and self.spec["directory"] != "":
+                    file_name = f"{self.spec['directory']}/{file_name}"
+
+                self.logger.info(
+                    f"Uploading file to GCP Bucket {self.spec['bucket']} with path: {file_name}"
                 )
-                if response.status_code == 401:
-                    self.logger.error(f"Unauthorised to Push file: {file}")
-                    result = 1
-                elif response.status_code == 403:
-                    self.logger.error(f"Failed to Push file: {file}")
-                    self.logger.error(
-                        f"File already exists or no Delete permissions (for upsert) on Bucket. Status Code: {response.status_code}"
+                with open(file, "rb") as file_data:
+                    response = requests.post(
+                        f"https://storage.googleapis.com/upload/storage/v1/b/{self.spec['bucket']}/o",
+                        headers={"Authorization": f"Bearer {self.credentials}"},
+                        data=file_data,
+                        timeout=1800,
+                        params={"name": file_name, "uploadType": "media"},
                     )
-                    result = 1
-                elif not response.ok:
-                    self.logger.error(f"Failed to Push file: {file}")
-                    self.logger.error(f"Got return code: {response.status_code}")
-                    self.logger.error(response.json())
-                    result = 1
-                else:
-                    self.logger.info(
-                        f"Successfully uploaded {file_name} to GCP bucket {self.spec['bucket']}"
-                    )
-
-        return result
+                    if response.status_code == 401:
+                        self.logger.error(f"Unauthorised to Push file: {file}")
+                        result = 1
+                    elif response.status_code == 403:
+                        self.logger.error(f"Failed to Push file: {file}")
+                        self.logger.error(
+                            f"File already exists or no Delete permissions (for upsert) on Bucket. Status Code: {response.status_code}"
+                        )
+                        result = 1
+                    elif not response.ok:
+                        self.logger.error(f"Failed to Push file: {file}")
+                        self.logger.error(f"Got return code: {response.status_code}")
+                        self.logger.error(response.json())
+                        result = 1
+                    else:
+                        self.logger.info(
+                            f"Successfully uploaded {file_name} to GCP bucket {self.spec['bucket']}"
+                        )
+            return result
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.logger.error(f"Failed to download file: {file}")
+            self.logger.exception(e)
+            return 1
 
     def pull_files_to_worker(
         self, files: list[str], local_staging_directory: str
@@ -193,8 +200,9 @@ class BucketTransfer(RemoteTransferHandler):
     def list_files(
         self, directory: str | None = None, file_pattern: str | None = None
     ) -> list:
+        self.logger.info("Listing Files method.")
         try:
-            file_pattern = self.spec["fileRegex"]
+            file_pattern = self.spec["fileExpression"]
             if "directory" in self.spec and self.spec["directory"] != "":
                 file_pattern = f"{self.spec['directory']}/{file_pattern}"
 
