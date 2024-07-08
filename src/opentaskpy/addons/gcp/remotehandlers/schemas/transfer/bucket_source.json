@@ -17,6 +17,9 @@
     "encryption": {
       "$ref": "http://localhost/transfer/encryption.json"
     },
+    "postCopyAction": {
+      "$ref": "bucket_source/postCopyAction.json"
+    },
     "transferType": {
       "type": "string",
       "enum": ["proxy"]

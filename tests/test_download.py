@@ -14,8 +14,14 @@ os.environ["OTF_LOG_LEVEL"] = "DEBUG"
 
 bucket_source_root_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "",
-    "fileExpression": "LOCAL123123_123_23.txt",
+    "directory": "postcopy",
+    "postCopyAction": {
+        "action": "rename",
+        "sub": "LOCAL",
+        "pattern": "LOCALh",
+        "destination": "postcopy1",
+    },
+    "fileExpression": "**.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
