@@ -44,7 +44,74 @@ class BucketTransfer(RemoteTransferHandler):
         Returns:
             int: 0 if successful, 1 if not.
         """
-        raise NotImplementedError
+        if "postCopyAction" in self.spec and (
+            self.spec["postCopyAction"]["action"] == "move"
+            or self.spec["postCopyAction"]["action"] == "rename"
+        ):
+            try:
+                # Append a directory if one is defined
+
+                for file in files:
+                    srcFile_encoded = file.replace("/", "%2F")
+                    dstFile_encoded = f"{self.spec['postCopyAction']['destination'].replace('/','%2F')}%2F{file.split('/')[-1]}"
+
+                    # Check if operation contains renaming
+                    if self.spec["postCopyAction"]["action"] == "rename":
+                        rename_regex = self.spec["postCopyAction"]["pattern"]
+                        rename_sub = self.spec["postCopyAction"]["sub"]
+                        dstFile_encoded = re.sub(
+                            rename_regex, rename_sub, dstFile_encoded
+                        )
+
+                    response = requests.post(
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{srcFile_encoded}/rewriteTo/b/{self.spec['bucket']}/o/{dstFile_encoded}",
+                        headers={"Authorization": f"Bearer {self.credentials}"},
+                        timeout=1800,
+                    )
+                    self.logger.info(response.status_code)
+                    check_copy = requests.get(
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{dstFile_encoded}",
+                        headers={"Authorization": f"Bearer {self.credentials}"},
+                        timeout=1800,
+                    )
+                    ## Verify file has been copied successfully.
+                    if not check_copy.ok:
+                        self.logger.info(
+                            f"File {dstFile_encoded.replace('%2F','/')} failed to be created in bucket {self.spec['bucket']}"
+                        )
+                        self.logger.error(check_copy)
+                        return 1
+
+                    response = requests.delete(
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{srcFile_encoded}",
+                        headers={"Authorization": f"Bearer {self.credentials}"},
+                        timeout=1800,
+                    )
+                    ## Verify file has been deleted successfully.
+                    check_delete = requests.get(
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{srcFile_encoded}",
+                        headers={"Authorization": f"Bearer {self.credentials}"},
+                        timeout=1800,
+                    )
+                    if check_delete.status_code != 404:
+                        self.logger.info(
+                            f"File {file} failed to be delete in bucket {self.spec['bucket']}"
+                        )
+                        self.logger.error(check_delete)
+                        return 1
+
+                    self.logger.info(response.status_code)
+                    self.logger.info(
+                        f"Moved file {file} to {dstFile_encoded.replace('%2F','/')}"
+                    )
+                return 0
+            except Exception as e:
+                self.logger.info(
+                    f"Error during file copy from {file} to {dstFile_encoded.replace('%2F','/')}"
+                )
+                self.logger.error(e)
+                return 1
+        return 1
 
     def move_files_to_final_location(self, files: list[str]) -> None:
         """Not implemented for this handler."""
@@ -73,9 +140,6 @@ class BucketTransfer(RemoteTransferHandler):
                 files = list(file_list.keys())
             else:
                 files = glob.glob(f"{local_staging_directory}/*")
-
-            self.logger.info("File lists:")
-            self.logger.info(f"{files}")
 
             for file in files:
                 result = 0
@@ -150,12 +214,13 @@ class BucketTransfer(RemoteTransferHandler):
                 self.logger.info(file)
                 file = file.replace(
                     "/", "%2F"
-                )  # Escaping front slashes from eventual directory
+                )  # Encoding front slashes from eventual directory
 
                 response = requests.get(
-                    f"https://storage.googleapis.com/download/storage/v1/b/{self.spec['bucket']}/o/{file}?alt=media",
+                    f"https://storage.googleapis.com/download/storage/v1/b/{self.spec['bucket']}/o/{file}",
                     headers={"Authorization": f"Bearer {self.credentials}"},
                     timeout=1800,
+                    params={"alt": "media"},  # Remove to only grab obj metadata
                 )
                 if response.status_code == 401:
                     self.logger.error(f"Unauthorized to GET file: {file}")
@@ -207,9 +272,10 @@ class BucketTransfer(RemoteTransferHandler):
                 file_pattern = f"{self.spec['directory']}/{file_pattern}"
 
             response = requests.get(
-                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o?matchGlob={file_pattern}",
+                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o",
                 headers={"Authorization": f"Bearer {self.credentials}"},
                 timeout=1800,
+                params={"matchGlob": file_pattern},
             )
             if response.status_code == 200:
                 data = response.json()
