@@ -52,44 +52,44 @@ class BucketTransfer(RemoteTransferHandler):
                 # Append a directory if one is defined
 
                 for file in files:
-                    srcFile_encoded = file.replace("/", "%2F")
-                    dstFile_encoded = f"{self.spec['postCopyAction']['destination'].replace('/','%2F')}%2F{file.split('/')[-1]}"
+                    source_file_encoded = file.replace("/", "%2F")
+                    dest_file_encoded = f"{self.spec['postCopyAction']['destination'].replace('/','%2F')}%2F{file.split('/')[-1]}"
 
                     # Check if operation contains renaming
                     if self.spec["postCopyAction"]["action"] == "rename":
                         rename_regex = self.spec["postCopyAction"]["pattern"]
                         rename_sub = self.spec["postCopyAction"]["sub"]
-                        dstFile_encoded = re.sub(
-                            rename_regex, rename_sub, dstFile_encoded
+                        dest_file_encoded = re.sub(
+                            rename_regex, rename_sub, dest_file_encoded
                         )
 
                     response = requests.post(
-                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{srcFile_encoded}/rewriteTo/b/{self.spec['bucket']}/o/{dstFile_encoded}",
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{source_file_encoded}/rewriteTo/b/{self.spec['bucket']}/o/{dest_file_encoded}",
                         headers={"Authorization": f"Bearer {self.credentials}"},
                         timeout=1800,
                     )
                     self.logger.info(response.status_code)
                     check_copy = requests.get(
-                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{dstFile_encoded}",
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{dest_file_encoded}",
                         headers={"Authorization": f"Bearer {self.credentials}"},
                         timeout=1800,
                     )
                     ## Verify file has been copied successfully.
                     if not check_copy.ok:
                         self.logger.info(
-                            f"File {dstFile_encoded.replace('%2F','/')} failed to be created in bucket {self.spec['bucket']}"
+                            f"File {dest_file_encoded.replace('%2F','/')} failed to be created in bucket {self.spec['bucket']}"
                         )
                         self.logger.error(check_copy)
                         return 1
 
                     response = requests.delete(
-                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{srcFile_encoded}",
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{source_file_encoded}",
                         headers={"Authorization": f"Bearer {self.credentials}"},
                         timeout=1800,
                     )
                     ## Verify file has been deleted successfully.
                     check_delete = requests.get(
-                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{srcFile_encoded}",
+                        f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o/{source_file_encoded}",
                         headers={"Authorization": f"Bearer {self.credentials}"},
                         timeout=1800,
                     )
@@ -102,12 +102,12 @@ class BucketTransfer(RemoteTransferHandler):
 
                     self.logger.info(response.status_code)
                     self.logger.info(
-                        f"Moved file {file} to {dstFile_encoded.replace('%2F','/')}"
+                        f"Moved file {file} to {dest_file_encoded.replace('%2F','/')}"
                     )
                 return 0
             except Exception as e:
                 self.logger.info(
-                    f"Error during file copy from {file} to {dstFile_encoded.replace('%2F','/')}"
+                    f"Error during file copy from {file} to {dest_file_encoded.replace('%2F','/')}"
                 )
                 self.logger.error(e)
                 return 1
