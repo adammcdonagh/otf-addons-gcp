@@ -11,11 +11,11 @@ Open Task Framework (OTF) is a Python based framework to make it easy to run pre
 
 This addons allows pushes and pulls of Files from (and to) GCP Cloud Storage Buckets.
 
-# GCP Credentials (Service Account)
+# GCP SA Credentials
 
 This package uses `google-auth` to get OAuth2.0 creds for the GCP Token API. This includes `access_token`.
 
-Prior to using this framework, a GCP IAM Service Account should be created thorug Gcloud CLI or Web portal. The JSON credentials for the Service account should be exported and stored locally.
+Prior to using this framework, a GCP IAM Service Account should be created through gcloud CLI or Web portal. The JSON credentials for the Service account should be exported and stored locally.
 (currently the .gitignore excludes any .json in the tests folder by default)
 
 The Service account crednetials should be included in `tests/testFiles` and require only the following properties:
