@@ -6,11 +6,11 @@ from google.oauth2 import credentials, service_account
 from opentaskpy.exceptions import RemoteTransferError
 
 
-def get_access_token(credentials: dict) -> credentials:
+def get_access_token(credentialsObj: dict) -> credentials:
     """Get an access token for GCP using the provided credentials.
 
     Args:
-        credentials: The credentials to use
+        credentialsObj: The credentials Service Account object to use
     """
     logger = opentaskpy.otflogging.init_logging(__name__, None, None)
     try:
@@ -19,7 +19,7 @@ def get_access_token(credentials: dict) -> credentials:
 
         logger.info("Retrieving credentials")
         authCreds = service_account.Credentials.from_service_account_info(
-            credentials["credentials"],
+            credentialsObj["credentials"],
             scopes=["https://www.googleapis.com/auth/cloud-platform"],
         )
         authCreds.refresh(Request())  # Refreshing access token

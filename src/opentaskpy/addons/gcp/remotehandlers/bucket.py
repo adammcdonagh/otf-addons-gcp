@@ -265,7 +265,18 @@ class BucketTransfer(RemoteTransferHandler):
     def list_files(
         self, directory: str | None = None, file_pattern: str | None = None
     ) -> list:
-        self.logger.info("Listing Files method.")
+        """List Files in GCP.
+
+        List Files available in the given directory with the specified file pattern (glob expression).
+
+        Args:
+            directory (str): A directory to list on the bucket.
+            file_pattern (str): The pattern to match the file on (e.g. **.txt)
+
+        Returns:
+            [obj] if successful, [] if not.
+        """
+        self.logger.info("Listing Files in Bucket.")
         try:
             file_pattern = self.spec["fileExpression"]
             if "directory" in self.spec and self.spec["directory"] != "":
@@ -277,20 +288,19 @@ class BucketTransfer(RemoteTransferHandler):
                 timeout=1800,
                 params={"matchGlob": file_pattern},
             )
+            items = []
             if response.status_code == 200:
                 data = response.json()
                 if "items" in data:
                     items = data["items"]
                     names = [item["name"] for item in items if "name" in item]
                     return names
-                else:
-                    self.logger.info(
-                        f"No items which matches {file_pattern} found in directory."
-                    )
-                    return []
-            else:
-                self.logger.error(f"List files returned {response.status_code} ")
-                raise RemoteTransferError(response)
+                self.logger.info(
+                    f"No items which matches {file_pattern} found in directory."
+                )
+                return []
+            self.logger.error(f"List files returned {response.status_code} ")
+            raise RemoteTransferError(response)
 
         except Exception as e:
             self.logger.error(
