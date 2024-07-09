@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "otf-addons-gcp"
-version = "v0.1.0"
+version = "v24.28.0"
 authors = [{ name = "Aldo Troiano", email = "a.troiano@reply.com" }]
 license = { text = "GPLv3" }
 classifiers = [
@@ -13,12 +13,8 @@ classifiers = [
     "Operating System :: POSIX",
 ]
 keywords = ["automation", "task", "framework", "gcp", "cloudstorage", "otf"]
-dependencies = [
-    "google-cloud-storage >= 2.17.0",
-    "google-auth >= v2.3.0",
-    "opentaskpy >= v24.23.0",
-]
-description = "Addons for opentaskpy, giving it the ability to push/pull via GCP Cloud Storage."
+dependencies = ["google-auth >= v2.3.0", "opentaskpy >= v24.23.0"]
+description = "Addons for opentaskpy, giving it the ability to push/pull files via GCP Cloud Storage."
 readme = "README.md"
 requires-python = ">=3.11"
 
@@ -55,8 +51,8 @@ dev = [
 profile = 'black'
 
 [tool.bumpver]
-current_version = "v0.0.1"
-version_pattern = "vYY.WW.PATCH[-TAG]"
+current_version = "v24.28.0"
+version_pattern = "YY.WW.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
 tag = true
@@ -88,6 +84,7 @@ good-names = ["id", "_", "ip", "rc", "ex"]
 # duplicate-code - unavoidable
 # cyclic-import - doesn't test if both import on load
 # abstract-class-little-used - prevents from setting right foundation
+# unused-argument - generic callbacks and setup methods create a lot of warnings
 # too-many-* - are not enforced for the sake of readability
 # too-few-* - same as too-many-*
 # abstract-method - with intro of async there are always methods missing
@@ -197,6 +194,11 @@ disable = [
     "raise-missing-from", # TRY200
     # "redefined-builtin", # A001, ruff is way more stricter, needs work
     "try-except-raise",                  # TRY302
+    "unused-argument",                   # ARG001, we don't use it
+    "unused-format-string-argument",     #F507
+    "unused-format-string-key",          # F504
+    "unused-import",                     # F401
+    "unused-variable",                   # F841
     "useless-else-on-loop",              # PLW0120
     "wildcard-import",                   # F403
     "bad-classmethod-argument",          # N804
@@ -339,7 +341,6 @@ max-locals = 20
 [tool.ruff]
 target-version = "py311"
 select = [
-    "ARG",     # flake8-unused-arguments
     "B007",    # Loop control variable {name} not used within loop body
     "B014",    # Exception handler with duplicate exception
     "C",       # complexity
@@ -386,3 +387,7 @@ convention = "google"
 
 [tool.ruff.mccabe]
 max-complexity = 25
+
+
+[tool.pytest.ini_options]
+log_cli = true

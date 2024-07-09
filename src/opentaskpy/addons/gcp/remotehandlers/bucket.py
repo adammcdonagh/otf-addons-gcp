@@ -289,16 +289,15 @@ class BucketTransfer(RemoteTransferHandler):
                     )
                     return []
             else:
-                self.logger.error(
-                    f"Error Listing files in Cloud Bucket. Status Code: {response.status_code}"
-                )
+                self.logger.error(f"List files returned {response.status_code} ")
+                raise RemoteTransferError(response)
 
         except Exception as e:
             self.logger.error(
                 f"Error listing files in directory {self.spec['bucket']}/{self.spec['directory']}/{self.spec['fileRegex']}"
             )
             self.logger.exception(e)
-        return []
+            return []
 
     def tidy(self) -> None:
         """Nothing to tidy."""
