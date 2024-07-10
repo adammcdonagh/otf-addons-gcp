@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "otf-addons-gcp"
-version = "v24.28.0"
+version = "v24.28.1"
 authors = [{ name = "Aldo Troiano", email = "a.troiano@reply.com" }]
 license = { text = "GPLv3" }
 classifiers = [
@@ -51,7 +51,7 @@ dev = [
 profile = 'black'
 
 [tool.bumpver]
-current_version = "v24.28.0"
+current_version = "v24.28.1"
 version_pattern = "YY.WW.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
