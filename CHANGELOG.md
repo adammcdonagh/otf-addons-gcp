@@ -1,5 +1,9 @@
 # Changelog
 
+## v24.28.1
+
+- Fix for FileExpression prop being used instead of FileRegex (GCP source)
+
 ## v24.28.0
 
 - Aligning Version to OpenTaskPy
