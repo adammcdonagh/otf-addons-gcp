@@ -1,0 +1,25 @@
+{
+  "$id": "http://localhost/transfer/bucket_destination/protocol.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "enum": ["opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer"]
+    },
+    "credentials": {
+      "type": "object",
+      "properties": {
+        "private_key": {
+          "type": "string"
+        },
+        "token_uri": {
+          "type": "string"
+        }
+      },
+      "required": ["private_key", "token_uri"]
+    },
+    "required": ["name", "credentials"],
+    "additionalProperties": false
+  }
+}

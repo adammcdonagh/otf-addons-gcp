@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://localhost/transfer/bucket_source/postCopyAction.json",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["move", "rename"]
+    },
+    "destination": {
+      "type": "string"
+    },
+    "sub": {
+      "type": "string"
+    },
+    "pattern": {
+      "type": "string"
+    }
+  },
+  "required": ["action"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "enum": ["move", "rename"]
+          }
+        }
+      },
+      "then": {
+        "required": ["action", "destination"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "rename"
+          }
+        }
+      },
+      "then": {
+        "required": ["sub", "pattern"]
+      }
+    }
+  ],
+  "additionalProperties": false
+}

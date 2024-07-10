@@ -1,0 +1,16 @@
+{
+  "HOST_A": "172.16.1.11",
+  "HOST_B": "172.16.1.12",
+  "SSH_USERNAME": "application",
+  "TEMP_SOURCE_FOLDER": "/tmp",
+  "MY_FOLDER": "{{ FOLDER1 }}",
+  "YYYY": "{{ now().strftime('%Y') }}",
+  "MM": "{{ now().strftime('%m') }}",
+  "DD": "{{ now().strftime('%d') }}",
+  "MONTH_SHORT": "{{ now().strftime('%b') }}",
+  "DAY_SHORT": "{{ now().strftime('%a') }}",
+  "PREV_DD": "{{ (now()|delta_days(-1)).strftime('%d') }}",
+  "PREV_MM": "{{ (now()|delta_days(-1)).strftime('%m') }}",
+  "PREV_YYYY": "{{ (now()|delta_days(-1)).strftime('%Y') }}"
+
+}

@@ -1,0 +1,33 @@
+{
+  "$id": "http://localhost/transfer/bucket_source.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "bucket": {
+      "type": "string"
+    },
+    "directory": {
+      "type": "string",
+      "default": ""
+    },
+    "fileRegex": {
+      "type": "string",
+      "default": ""
+    },
+    "encryption": {
+      "$ref": "http://localhost/transfer/encryption.json"
+    },
+    "postCopyAction": {
+      "$ref": "bucket_source/postCopyAction.json"
+    },
+    "transferType": {
+      "type": "string",
+      "enum": ["proxy"]
+    },
+    "protocol": {
+      "$ref": "bucket_source/protocol.json"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["bucket", "protocol", "fileRegex"]
+}
