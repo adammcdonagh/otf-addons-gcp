@@ -278,7 +278,7 @@ class BucketTransfer(RemoteTransferHandler):
         """
         self.logger.info("Listing Files in Bucket.")
         try:
-            file_pattern = self.spec["fileExpression"]
+            file_pattern = self.spec["fileRegex"]
             if "directory" in self.spec and self.spec["directory"] != "":
                 file_pattern = f"{self.spec['directory']}/{file_pattern}"
 
