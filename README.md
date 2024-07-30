@@ -46,7 +46,7 @@ Transfers require a few additional arguments to work. These are:
 - File transfer: ingress/egress from/to Cloud Storage
   - Renaming functionality
   - PostCopy functionality
-  - FileWatch functionality
+  - fileWatch functionality
 
 # Configuration
 
