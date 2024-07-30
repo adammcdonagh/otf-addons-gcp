@@ -1,5 +1,9 @@
 # Changelog
 
+## v24.28.2
+
+- Added support for fileWatch property
+
 ## v24.28.1
 
 - Fix for FileExpression prop being used instead of FileRegex (GCP source)
