@@ -14,6 +14,12 @@
       "type": "string",
       "default": ""
     },
+    "error": {
+      "type": "boolean"
+    },
+    "fileWatch": {
+      "$ref": "bucket_source/fileWatch.json"
+    },
     "encryption": {
       "$ref": "http://localhost/transfer/encryption.json"
     },
