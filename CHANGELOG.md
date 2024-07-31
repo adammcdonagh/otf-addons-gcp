@@ -1,6 +1,6 @@
 # Changelog
 
-## v24.28.2
+## v24.31.0
 
 - Added support for fileWatch property
 
