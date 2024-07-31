@@ -52,7 +52,7 @@ profile = 'black'
 
 [tool.bumpver]
 current_version = "v24.28.1"
-version_pattern = "YY.WW.PATCH[-TAG]"
+version_pattern = "vYY.WW.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
 tag = true
