@@ -68,7 +68,6 @@ def gcp_creds():
 
 
 def test_gcp_root_to_local_transfer(gcp_creds):
-
     task_definition = {
         "type": "transfer",
         "source": deepcopy(bucket_source_root_definition),
@@ -82,7 +81,6 @@ def test_gcp_root_to_local_transfer(gcp_creds):
 
 
 def test_gcp_nested_to_local_transfer(gcp_creds):
-
     task_definition = {
         "type": "transfer",
         "source": deepcopy(bucket_source_nested_definition),
@@ -96,7 +94,6 @@ def test_gcp_nested_to_local_transfer(gcp_creds):
 
 
 def test_gcp_nested_regex_to_local_transfer(gcp_creds):
-
     task_definition = {
         "type": "transfer",
         "source": deepcopy(bucket_source_nested_regex_definition),
@@ -104,6 +101,36 @@ def test_gcp_nested_regex_to_local_transfer(gcp_creds):
     }
     task_definition["source"]["protocol"]["credentials"] = gcp_creds
 
+    transfer_obj = transfer.Transfer(None, "gcp-to-local", task_definition)
+
+    assert transfer_obj.run()
+
+
+def test_gcp_root_to_local_transfer(gcp_creds):
+    task_definition = {
+        "type": "transfer",
+        "source": deepcopy(bucket_source_root_definition),
+        "destination": [deepcopy(bucket_local_definition)],
+    }
+    task_definition["source"]["protocol"]["credentials"] = gcp_creds
+
+    transfer_obj = transfer.Transfer(None, "gcp-to-local", task_definition)
+
+    assert transfer_obj.run()
+
+
+def test_gcp_file_watch(gcp_creds):
+    task_definition = {
+        "type": "transfer",
+        "source": deepcopy(bucket_source_root_definition),
+        "destination": [deepcopy(bucket_local_definition)],
+    }
+    task_definition["source"]["fileWatch"] = {
+        "timeout": 300,
+        "directory": "localnested",
+        "fileRegex": ".*\\.txt",
+    }
+    task_definition["source"]["protocol"]["credentials"] = gcp_creds
     transfer_obj = transfer.Transfer(None, "gcp-to-local", task_definition)
 
     assert transfer_obj.run()

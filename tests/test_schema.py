@@ -140,3 +140,34 @@ def test_gcp_to_gcp(
         "destination": valid_bucket_destination_definition,
     }
     assert validate_transfer_json(json_data)
+
+
+def test_gcp_source_file_watch(valid_bucket_source_definition):
+    json_data = {
+        "type": "transfer",
+        "source": valid_bucket_source_definition,
+    }
+
+    json_data["source"]["fileWatch"] = {
+        "timeout": 10,
+        "directory": "src",
+        "fileRegex": ".*\\.txt",
+    }
+
+    assert validate_transfer_json(json_data)
+
+    # Remove fileRegex
+    del json_data["source"]["fileWatch"]["fileRegex"]
+    assert validate_transfer_json(json_data)
+
+    # Remove directory
+    del json_data["source"]["fileWatch"]["directory"]
+    assert validate_transfer_json(json_data)
+
+    # Add watchOnly
+    json_data["source"]["fileWatch"]["watchOnly"] = True
+    assert validate_transfer_json(json_data)
+
+    # Add error
+    json_data["source"]["error"] = True
+    assert validate_transfer_json(json_data)
