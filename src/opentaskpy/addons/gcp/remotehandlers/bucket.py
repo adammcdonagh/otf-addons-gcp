@@ -1,14 +1,17 @@
 """GCP Cloud Bucket remote handler."""
 
 import glob
+import os
 import re
 
 import opentaskpy.otflogging
 import requests
-from opentaskpy.exceptions import RemoteTransferError
+from google.cloud import storage
 from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
 
 from .creds import get_access_token
+
+MAX_OBJECTS_PER_QUERY = 100
 
 
 class BucketTransfer(RemoteTransferHandler):
@@ -30,6 +33,7 @@ class BucketTransfer(RemoteTransferHandler):
 
         # Generating Access Token for Transfer
         self.credentials = get_access_token(self.spec["protocol"])
+        self.storage_client = storage.Client(credentials=self.credentials)
 
     def supports_direct_transfer(self) -> bool:
         """Return False, as all files should go via the worker."""
@@ -264,50 +268,57 @@ class BucketTransfer(RemoteTransferHandler):
 
     def list_files(
         self, directory: str | None = None, file_pattern: str | None = None
-    ) -> list:
-        """List Files in GCP.
-
-        List Files available in the given directory with the specified file pattern (glob expression).
+    ) -> dict:
+        """Return list of files that match the source definition.
 
         Args:
-            directory (str): A directory to list on the bucket.
-            file_pattern (str): The pattern to match the file on (e.g. **.txt)
+            directory (str, optional): The directory to search in. Defaults to None.
+            file_pattern (str, optional): The file pattern to search for. Defaults to None.
 
         Returns:
-            [obj] if successful, [] if not.
+            dict: A dict of files that match the source definition.
         """
-        self.logger.info("Listing Files in Bucket.")
-        try:
-            file_pattern = self.spec["fileRegex"]
-            if "directory" in self.spec and self.spec["directory"] != "":
-                file_pattern = f"{self.spec['directory']}/{file_pattern}"
+        bucket_name = self.spec["bucket"]
+        bucket = self.storage_client.bucket(bucket_name)
+        prefix = directory or self.spec.get("directory", "")
+        remote_files = {}
 
-            response = requests.get(
-                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o",
-                headers={"Authorization": f"Bearer {self.credentials}"},
-                timeout=1800,
-                params={"matchGlob": file_pattern},
-            )
-            items = []
-            if response.status_code == 200:
-                data = response.json()
-                if "items" in data:
-                    items = data["items"]
-                    names = [item["name"] for item in items if "name" in item]
-                    return names
-                self.logger.info(
-                    f"No items which matches {file_pattern} found in directory."
-                )
-                return []
-            self.logger.error(f"List files returned {response.status_code} ")
-            raise RemoteTransferError(response)
+        self.logger.info(
+            f"Listing files in {bucket_name} matching"
+            f" {file_pattern}{' in ' + (directory or '')}"
+        )
+
+        try:
+            blobs = bucket.list_blobs(prefix=prefix)
+            for blob in blobs:
+                key = blob.name
+                filename = os.path.basename(key)
+
+                if file_pattern and not re.match(file_pattern, filename):
+                    continue
+
+                # Ensure the file is directly in the specified directory, not a subdirectory
+                if directory:
+                    file_directory = os.path.dirname(key)
+                    if file_directory != directory:
+                        continue
+
+                if key.startswith("/"):
+                    continue
+
+                self.logger.info(f"Found file: {filename}")
+
+                remote_files[key] = {
+                    "size": blob.size,
+                    "modified_time": blob.updated.timestamp(),
+                }
 
         except Exception as e:
-            self.logger.error(
-                f"Error listing files in directory {self.spec['bucket']}/{self.spec['directory']}/{self.spec['fileRegex']}"
-            )
+            self.logger.error(f"Error listing files in {bucket_name}")
             self.logger.exception(e)
-            return []
+            raise e
+
+        return remote_files
 
     def tidy(self) -> None:
         """Nothing to tidy."""
