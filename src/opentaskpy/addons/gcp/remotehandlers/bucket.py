@@ -280,7 +280,9 @@ class BucketTransfer(RemoteTransferHandler):
         """
         bucket_name = self.spec["bucket"]
         bucket = self.storage_client.bucket(bucket_name)
-        prefix = directory or self.spec.get("directory", "")
+        prefix = directory or self.spec.get(
+            "directory", ""
+        )  # files are stored in root dir, defaults to empty string unless directory specified
         remote_files = {}
 
         self.logger.info(
@@ -289,29 +291,41 @@ class BucketTransfer(RemoteTransferHandler):
         )
 
         try:
-            blobs = bucket.list_blobs(prefix=prefix)
-            for blob in blobs:
-                key = blob.name
-                filename = os.path.basename(key)
+            blobs = bucket.list_blobs(prefix=prefix, max_results=MAX_OBJECTS_PER_QUERY)
+            while blobs:
+                for blob in blobs:
+                    key = blob.name
+                    filename = os.path.basename(key)
 
-                if file_pattern and not re.match(file_pattern, filename):
-                    continue
-
-                # Ensure the file is directly in the specified directory, not a subdirectory
-                if directory:
-                    file_directory = os.path.dirname(key)
-                    if file_directory != directory:
+                    # Skip files that do not match the file pattern
+                    if file_pattern and not re.match(file_pattern, filename):
                         continue
 
-                if key.startswith("/"):
-                    continue
+                    # Ensure the file is directly in the specified directory, not a subdirectory
+                    if directory:
+                        file_directory = os.path.dirname(key)
+                        if file_directory != directory:
+                            continue
 
-                self.logger.info(f"Found file: {filename}")
+                    if key.startswith("/"):
+                        continue
 
-                remote_files[key] = {
-                    "size": blob.size,
-                    "modified_time": blob.updated.timestamp(),
-                }
+                    self.logger.info(f"Found file: {filename}")
+
+                    remote_files[key] = {
+                        "size": blob.size,
+                        "modified_time": blob.updated.timestamp(),
+                    }
+
+                # Retrieve the next page token, if it exists.
+                if blobs.next_page_token:
+                    blobs = bucket.list_blobs(
+                        prefix=prefix,
+                        max_results=MAX_OBJECTS_PER_QUERY,
+                        page_token=blobs.next_page_token,
+                    )
+                else:
+                    break
 
         except Exception as e:
             self.logger.error(f"Error listing files in {bucket_name}")

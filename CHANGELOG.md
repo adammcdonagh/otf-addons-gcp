@@ -1,5 +1,9 @@
 # Changelog
 
+## v24.32.0
+
+- Added google cloud storage dependency to list blobs from GCP Bucket matching a regex pattern.
+
 ## v24.31.0
 
 - Added support for fileWatch property
