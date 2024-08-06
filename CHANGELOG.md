@@ -2,7 +2,7 @@
 
 ## v24.32.0
 
-- Added google cloud storage dependency to list blobs from GCP Bucket matching a regex pattern.
+- List all files on GCP bucket and perform regex pattern matching to return files.
 
 ## v24.31.0
 

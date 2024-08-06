@@ -1,12 +1,11 @@
 """GCP Cloud Bucket remote handler."""
 
 import glob
-import os
 import re
 
 import opentaskpy.otflogging
 import requests
-from google.cloud import storage
+from opentaskpy.exceptions import RemoteTransferError
 from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
 
 from .creds import get_access_token
@@ -33,7 +32,6 @@ class BucketTransfer(RemoteTransferHandler):
 
         # Generating Access Token for Transfer
         self.credentials = get_access_token(self.spec["protocol"])
-        self.storage_client = storage.Client(credentials=self.credentials)
 
     def supports_direct_transfer(self) -> bool:
         """Return False, as all files should go via the worker."""
@@ -266,73 +264,59 @@ class BucketTransfer(RemoteTransferHandler):
         """Not implemented for this transfer type."""
         raise NotImplementedError
 
-    def list_files(
-        self, directory: str | None = None, file_pattern: str | None = None
-    ) -> dict:
-        """Return list of files that match the source definition.
+    def list_files(self, directory: str | None = None) -> list:
+        """List Files in GCP with pagination and local regex matching.
 
         Args:
-            directory (str, optional): The directory to search in. Defaults to None.
-            file_pattern (str, optional): The file pattern to search for. Defaults to None.
+            directory (str): A directory to list on the bucket.
 
         Returns:
-            dict: A dict of files that match the source definition.
+            list: A list of filenames if successful, an empty list if not.
         """
-        bucket_name = self.spec["bucket"]
-        bucket = self.storage_client.bucket(bucket_name)
-        prefix = directory or self.spec.get(
-            "directory", ""
-        )  # files are stored in root dir, defaults to empty string unless directory specified
-        remote_files = {}
-
-        self.logger.info(
-            f"Listing files in {bucket_name} matching"
-            f" {file_pattern}{' in ' + (directory or '')}"
-        )
-
+        self.logger.info("Listing Files in Bucket.")
         try:
-            blobs = bucket.list_blobs(prefix=prefix, max_results=MAX_OBJECTS_PER_QUERY)
-            while blobs:
-                for blob in blobs:
-                    key = blob.name
-                    filename = os.path.basename(key)
+            file_pattern = self.spec["fileRegex"]
+            directory = directory or self.spec.get("directory", "")
 
-                    # Skip files that do not match the file pattern
-                    if file_pattern and not re.match(file_pattern, filename):
-                        continue
+            base_url = (
+                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o"
+            )
+            headers = {"Authorization": f"Bearer {self.credentials}"}
+            params = {"prefix": directory} if directory else {}
+            items = []
 
-                    # Ensure the file is directly in the specified directory, not a subdirectory
-                    if directory:
-                        file_directory = os.path.dirname(key)
-                        if file_directory != directory:
-                            continue
+            while True:
+                response = requests.get(
+                    base_url, headers=headers, params=params, timeout=1800
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if "items" in data:
+                        items.extend(data["items"])
 
-                    if key.startswith("/"):
-                        continue
-
-                    self.logger.info(f"Found file: {filename}")
-
-                    remote_files[key] = {
-                        "size": blob.size,
-                        "modified_time": blob.updated.timestamp(),
-                    }
-
-                # Retrieve the next page token, if it exists.
-                if blobs.next_page_token:
-                    blobs = bucket.list_blobs(
-                        prefix=prefix,
-                        max_results=MAX_OBJECTS_PER_QUERY,
-                        page_token=blobs.next_page_token,
-                    )
+                    if "nextPageToken" in data:
+                        # Set the nextPageToken for the next request
+                        params["pageToken"] = data["nextPageToken"]
+                    else:
+                        break
                 else:
-                    break
+                    self.logger.error(f"List files returned {response.status_code}")
+                    raise RemoteTransferError(response)
+
+            filenames = [
+                item["name"]
+                for item in items
+                if "name" in item
+                and (not file_pattern or re.match(file_pattern, item["name"]))
+            ]
+            return filenames
 
         except Exception as e:
-            self.logger.error(f"Error listing files in {bucket_name}")
+            self.logger.error(
+                f"Error listing files in directory {self.spec['bucket']}/{directory}"
+            )
             self.logger.exception(e)
-            raise e
-
-        return remote_files
+            return []
 
     def tidy(self) -> None:
         """Nothing to tidy."""
