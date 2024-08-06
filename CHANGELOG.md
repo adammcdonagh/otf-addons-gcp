@@ -3,7 +3,6 @@
 ## v24.32.1
 
 - Minor fix to accept file_pattern arg in list_files method.
--
 
 ## v24.32.0
 
