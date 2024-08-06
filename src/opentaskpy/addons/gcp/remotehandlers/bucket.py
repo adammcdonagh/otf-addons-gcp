@@ -282,7 +282,11 @@ class BucketTransfer(RemoteTransferHandler):
                 f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o"
             )
             headers = {"Authorization": f"Bearer {self.credentials}"}
-            params = {"prefix": directory} if directory else {}
+            params = (
+                {"prefix": directory, "maxResults": MAX_OBJECTS_PER_QUERY}
+                if directory
+                else {}
+            )
             items = []
 
             while True:
