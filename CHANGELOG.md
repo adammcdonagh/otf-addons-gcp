@@ -1,5 +1,9 @@
 # Changelog
 
+## v24.32.0
+
+- List all files on GCP bucket and perform regex pattern matching to return files.
+
 ## v24.31.0
 
 - Added support for fileWatch property

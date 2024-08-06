@@ -10,6 +10,8 @@ from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
 
 from .creds import get_access_token
 
+MAX_OBJECTS_PER_QUERY = 100
+
 
 class BucketTransfer(RemoteTransferHandler):
     """GCP CloudBucket remote transfer handler."""
@@ -262,49 +264,60 @@ class BucketTransfer(RemoteTransferHandler):
         """Not implemented for this transfer type."""
         raise NotImplementedError
 
-    def list_files(
-        self, directory: str | None = None, file_pattern: str | None = None
-    ) -> list:
-        """List Files in GCP.
-
-        List Files available in the given directory with the specified file pattern (glob expression).
+    def list_files(self, directory: str | None = None) -> list:
+        """List Files in GCP with pagination and local regex matching.
 
         Args:
             directory (str): A directory to list on the bucket.
-            file_pattern (str): The pattern to match the file on (e.g. **.txt)
 
         Returns:
-            [obj] if successful, [] if not.
+            list: A list of filenames if successful, an empty list if not.
         """
         self.logger.info("Listing Files in Bucket.")
         try:
             file_pattern = self.spec["fileRegex"]
-            if "directory" in self.spec and self.spec["directory"] != "":
-                file_pattern = f"{self.spec['directory']}/{file_pattern}"
+            directory = directory or self.spec.get("directory", "")
 
-            response = requests.get(
-                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o",
-                headers={"Authorization": f"Bearer {self.credentials}"},
-                timeout=1800,
-                params={"matchGlob": file_pattern},
+            base_url = (
+                f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o"
+            )
+            headers = {"Authorization": f"Bearer {self.credentials}"}
+            params = (
+                {"prefix": directory, "maxResults": MAX_OBJECTS_PER_QUERY}
+                if directory
+                else {}
             )
             items = []
-            if response.status_code == 200:
-                data = response.json()
-                if "items" in data:
-                    items = data["items"]
-                    names = [item["name"] for item in items if "name" in item]
-                    return names
-                self.logger.info(
-                    f"No items which matches {file_pattern} found in directory."
+
+            while True:
+                response = requests.get(
+                    base_url, headers=headers, params=params, timeout=1800
                 )
-                return []
-            self.logger.error(f"List files returned {response.status_code} ")
-            raise RemoteTransferError(response)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "items" in data:
+                        items.extend(data["items"])
+
+                    if "nextPageToken" in data:
+                        # Set the nextPageToken for the next request
+                        params["pageToken"] = data["nextPageToken"]
+                    else:
+                        break
+                else:
+                    self.logger.error(f"List files returned {response.status_code}")
+                    raise RemoteTransferError(response)
+
+            filenames = [
+                item["name"]
+                for item in items
+                if "name" in item
+                and (not file_pattern or re.match(file_pattern, item["name"]))
+            ]
+            return filenames
 
         except Exception as e:
             self.logger.error(
-                f"Error listing files in directory {self.spec['bucket']}/{self.spec['directory']}/{self.spec['fileRegex']}"
+                f"Error listing files in directory {self.spec['bucket']}/{directory}"
             )
             self.logger.exception(e)
             return []
