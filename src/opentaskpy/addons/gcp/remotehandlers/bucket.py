@@ -264,18 +264,20 @@ class BucketTransfer(RemoteTransferHandler):
         """Not implemented for this transfer type."""
         raise NotImplementedError
 
-    def list_files(self, directory: str | None = None) -> list:
+    def list_files(
+        self, directory: str | None = None, file_pattern: str | None = None
+    ) -> list:
         """List Files in GCP with pagination and local regex matching.
 
         Args:
             directory (str): A directory to list on the bucket.
+            file_pattern (str): File pattern to match files.
 
         Returns:
             list: A list of filenames if successful, an empty list if not.
         """
         self.logger.info("Listing Files in Bucket.")
         try:
-            file_pattern = self.spec["fileRegex"]
             directory = directory or self.spec.get("directory", "")
 
             base_url = (
