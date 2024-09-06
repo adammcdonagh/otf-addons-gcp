@@ -1,5 +1,11 @@
 # Changelog
 
+## v24.36.0
+
+- Handle token refresh
+- Check fileRegex
+- Handle fileWatch
+
 ## v24.32.1
 
 - Minor fix to accept file_pattern arg in list_files method.
