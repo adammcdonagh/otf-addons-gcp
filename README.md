@@ -85,6 +85,6 @@ JSON configs for transfers can be defined as follows:
         "pattern" : "(?<![^ ])(?=[^ ])(?!ab)",   ## Regex for prefixing
         "sub" : "Archived_"
     },
-    "fileRegex": "**.txt" ## Global Expression syntax (only download .txt)
+    "fileRegex": "**.txt" ## accepts re module matching
 }
 ```

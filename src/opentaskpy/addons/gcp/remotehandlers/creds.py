@@ -1,5 +1,7 @@
 """GCP helper functions."""
 
+from datetime import datetime, timedelta
+
 import opentaskpy.otflogging
 from google.auth.transport.requests import Request
 from google.oauth2 import credentials, service_account
@@ -15,14 +17,21 @@ def get_access_token(credentials_: dict) -> credentials:
     logger = opentaskpy.otflogging.init_logging(__name__, None, None)
     try:
         # Get an Access Token
-        auth_creds = None  # Initialising authCreds
+        # auth_creds = None  # Initialising authCreds
 
         logger.info("Retrieving credentials")
         auth_creds = service_account.Credentials.from_service_account_info(
             credentials_["credentials"],
             scopes=["https://www.googleapis.com/auth/cloud-platform"],
         )
-        auth_creds.refresh(Request())  # Refreshing access token
+        # Check if the token needs to be refreshed
+        if (
+            auth_creds.expiry is None
+            or auth_creds.expired
+            or auth_creds.expiry > datetime.now() - timedelta(minutes=5)
+        ):
+            logger.info("Refreshing access token")
+            auth_creds.refresh(Request())  # Refreshing access token
 
         if not auth_creds.token:  # Handle exception
             logger.error("Error Retrieving credentials.")

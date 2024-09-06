@@ -11,17 +11,13 @@ from opentaskpy.taskhandlers import transfer
 
 # Set the log level to maximum
 os.environ["OTF_LOG_LEVEL"] = "DEBUG"
+current_dir = os.path.dirname(os.path.realpath(__file__))
+load_dotenv(dotenv_path=f"{current_dir}/../.env")
 
 bucket_source_root_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "postcopy",
-    "postCopyAction": {
-        "action": "rename",
-        "sub": "LOCAL",
-        "pattern": "LOCALh",
-        "destination": "postcopy1",
-    },
-    "fileExpression": "**.txt",
+    "directory": "localnested",
+    "fileRegex": ".*\\.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
@@ -30,7 +26,7 @@ bucket_source_root_definition = {
 bucket_source_nested_definition = {
     "bucket": "bucket-test-gcpupload",
     "directory": "localnested",
-    "fileExpression": "**.txt",
+    "fileRegex": ".*\\.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
@@ -39,14 +35,14 @@ bucket_source_nested_definition = {
 bucket_source_nested_regex_definition = {
     "bucket": "bucket-test-gcpupload",
     "directory": "localnested",
-    "fileExpression": "root1dir.txt",
+    "fileRegex": ".*\\.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
     },
 }
 bucket_local_definition = {
-    "directory": "src/tmp/downloaded",
+    "directory": current_dir,
     "protocol": {"name": "local"},
 }
 
@@ -61,7 +57,7 @@ def gcp_creds():
         current_dir = os.path.dirname(os.path.realpath(__file__))
         load_dotenv(dotenv_path=f"{current_dir}/../.env")
 
-    with open(f"{current_dir}/testFiles/testprojectglue-2fb4b71447c4.json", "r") as f:
+    with open(f"{current_dir}/creds.json", "r") as f:
         keyR = f.read()
 
     return json.loads(keyR)
@@ -87,6 +83,11 @@ def test_gcp_nested_to_local_transfer(gcp_creds):
         "destination": [deepcopy(bucket_local_definition)],
     }
     task_definition["source"]["protocol"]["credentials"] = gcp_creds
+    task_definition["source"]["fileWatch"] = {
+        "timeout": 20,
+        "directory": "localnested",
+        "fileRegex": ".*\\.txt",
+    }
 
     transfer_obj = transfer.Transfer(None, "gcp-to-local", task_definition)
 
@@ -100,6 +101,9 @@ def test_gcp_nested_regex_to_local_transfer(gcp_creds):
         "destination": [deepcopy(bucket_local_definition)],
     }
     task_definition["source"]["protocol"]["credentials"] = gcp_creds
+    task_definition["source"]["fileWatch"] = {
+        "timeout": 20,
+    }
 
     transfer_obj = transfer.Transfer(None, "gcp-to-local", task_definition)
 
@@ -126,9 +130,8 @@ def test_gcp_file_watch(gcp_creds):
         "destination": [deepcopy(bucket_local_definition)],
     }
     task_definition["source"]["fileWatch"] = {
-        "timeout": 300,
-        "directory": "localnested",
-        "fileRegex": ".*\\.txt",
+        "timeout": 20,
+        "fileRegex": ".*\\.tx$",
     }
     task_definition["source"]["protocol"]["credentials"] = gcp_creds
     transfer_obj = transfer.Transfer(None, "gcp-to-local", task_definition)
