@@ -5,7 +5,6 @@ import re
 
 import opentaskpy.otflogging
 import requests
-from opentaskpy.exceptions import RemoteTransferError
 from opentaskpy.remotehandlers.remotehandler import RemoteTransferHandler
 
 from .creds import get_access_token
@@ -33,6 +32,10 @@ class BucketTransfer(RemoteTransferHandler):
         # Generating Access Token for Transfer
         self.credentials = get_access_token(self.spec["protocol"])
 
+    def validate_or_refresh_creds(self) -> None:
+        """Ensure the credentials are valid, refresh if necessary."""
+        self.credentials = get_access_token(self.spec["protocol"])
+
     def supports_direct_transfer(self) -> bool:
         """Return False, as all files should go via the worker."""
         return False
@@ -51,6 +54,7 @@ class BucketTransfer(RemoteTransferHandler):
             or self.spec["postCopyAction"]["action"] == "rename"
         ):
             try:
+                self.validate_or_refresh_creds()  # refresh creds
                 # Append a directory if one is defined
 
                 for file in files:
@@ -138,6 +142,7 @@ class BucketTransfer(RemoteTransferHandler):
             int: 0 if successful, 1 if not.
         """
         try:
+            self.validate_or_refresh_creds()  # refresh creds
             if file_list:
                 files = list(file_list.keys())
             else:
@@ -212,6 +217,7 @@ class BucketTransfer(RemoteTransferHandler):
         result = 0
         self.logger.info("Downloading file from GCP.")
         try:
+            self.validate_or_refresh_creds()  # refresh creds
             for file in files:
                 self.logger.info(file)
                 file = file.replace(
@@ -278,17 +284,14 @@ class BucketTransfer(RemoteTransferHandler):
         """
         self.logger.info("Listing Files in Bucket.")
         try:
+            self.validate_or_refresh_creds()  # refresh creds
             directory = directory or self.spec.get("directory", "")
 
             base_url = (
                 f"https://storage.googleapis.com/storage/v1/b/{self.spec['bucket']}/o"
             )
             headers = {"Authorization": f"Bearer {self.credentials}"}
-            params = (
-                {"prefix": directory, "maxResults": MAX_OBJECTS_PER_QUERY}
-                if directory
-                else {}
-            )
+            params = {"prefix": directory, "maxResults": MAX_OBJECTS_PER_QUERY}
             items = []
 
             while True:
@@ -307,7 +310,7 @@ class BucketTransfer(RemoteTransferHandler):
                         break
                 else:
                     self.logger.error(f"List files returned {response.status_code}")
-                    raise RemoteTransferError(response)
+                    self.logger.error(f"Remote files not found: {response}")
 
             filenames = [
                 item["name"]

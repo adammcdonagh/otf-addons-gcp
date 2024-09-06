@@ -11,6 +11,8 @@ from opentaskpy.taskhandlers import transfer
 
 # Set the log level to maximum
 os.environ["OTF_LOG_LEVEL"] = "DEBUG"
+current_dir = os.path.dirname(os.path.realpath(__file__))
+load_dotenv(dotenv_path=f"{current_dir}/../.env")
 
 
 bucket_destination_definition = {
@@ -33,7 +35,7 @@ def gcp_creds():
         current_dir = os.path.dirname(os.path.realpath(__file__))
         load_dotenv(dotenv_path=f"{current_dir}/../.env")
 
-    with open(f"{current_dir}/testFiles/testprojectglue-2fb4b71447c4.json", "r") as f:
+    with open(f"{current_dir}/creds.json", "r") as f:
         keyR = f.read()
 
     return json.loads(keyR)
@@ -44,7 +46,7 @@ def test_local_to_gcp_transfer(gcp_creds):
     task_definition = {
         "type": "transfer",
         "source": {
-            "directory": "src/tmp",
+            "directory": f"{current_dir}",
             "fileRegex": ".*\\.txt",
             "protocol": {"name": "local"},
         },
