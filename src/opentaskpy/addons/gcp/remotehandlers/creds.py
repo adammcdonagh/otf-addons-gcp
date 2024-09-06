@@ -17,8 +17,6 @@ def get_access_token(credentials_: dict) -> credentials:
     logger = opentaskpy.otflogging.init_logging(__name__, None, None)
     try:
         # Get an Access Token
-        # auth_creds = None  # Initialising authCreds
-
         logger.info("Retrieving credentials")
         auth_creds = service_account.Credentials.from_service_account_info(
             credentials_["credentials"],
