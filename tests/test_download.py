@@ -16,8 +16,8 @@ load_dotenv(dotenv_path=f"{current_dir}/../.env")
 
 bucket_source_root_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "localnested",
-    "fileRegex": ".*\\.txt",
+    "directory": "",
+    "fileRegex": "^rootdir\\d*.txt$",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
         "credentials": {},
@@ -25,7 +25,7 @@ bucket_source_root_definition = {
 }
 bucket_source_nested_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "localnested",
+    "directory": "",
     "fileRegex": ".*\\.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",
@@ -34,7 +34,7 @@ bucket_source_nested_definition = {
 }
 bucket_source_nested_regex_definition = {
     "bucket": "bucket-test-gcpupload",
-    "directory": "localnested",
+    "directory": "",
     "fileRegex": ".*\\.txt",
     "protocol": {
         "name": "opentaskpy.addons.gcp.remotehandlers.bucket.BucketTransfer",

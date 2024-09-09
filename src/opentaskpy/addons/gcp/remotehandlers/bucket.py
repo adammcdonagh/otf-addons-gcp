@@ -272,7 +272,7 @@ class BucketTransfer(RemoteTransferHandler):
 
     def list_files(
         self, directory: str | None = None, file_pattern: str | None = None
-    ) -> list:
+    ) -> dict:
         """List Files in GCP with pagination and local regex matching.
 
         Args:
@@ -280,7 +280,7 @@ class BucketTransfer(RemoteTransferHandler):
             file_pattern (str): File pattern to match files.
 
         Returns:
-            list: A list of filenames if successful, an empty list if not.
+            dict: A dict of filenames if successful, an empty list if not.
         """
         self.logger.info("Listing Files in Bucket.")
         try:
@@ -312,20 +312,23 @@ class BucketTransfer(RemoteTransferHandler):
                     self.logger.error(f"List files returned {response.status_code}")
                     self.logger.error(f"Remote files not found: {response}")
 
-            filenames = [
-                item["name"]
-                for item in items
-                if "name" in item
-                and (not file_pattern or re.match(file_pattern, item["name"]))
-            ]
-            return filenames
+            remote_files = {}
+            for item in items:
+                if "name" in item:
+                    file_name = item["name"].split("/")[-1]
+                    if not file_pattern or re.match(file_pattern, file_name):
+                        remote_files[item["name"]] = {
+                            "size": item["size"],
+                            "modified_time": item["updated"],
+                        }
+            return remote_files
 
         except Exception as e:
             self.logger.error(
                 f"Error listing files in directory {self.spec['bucket']}/{directory}"
             )
             self.logger.exception(e)
-            return []
+            return {}
 
     def tidy(self) -> None:
         """Nothing to tidy."""
