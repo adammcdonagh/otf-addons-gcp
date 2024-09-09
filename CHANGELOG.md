@@ -1,5 +1,10 @@
 # Changelog
 
+## v24.37.0
+
+- list_files return type (dict)
+- Gently handling nested bucket directories
+
 ## v24.36.0
 
 - Handle token refresh
